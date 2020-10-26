@@ -75,7 +75,8 @@ public interface Visitor<R> {
         }
 
         default Y<R> execute(Function<T, R> function) {
-            return previousConsumer().andThen(visitorBuilder -> visitorBuilder.register(type(), function));
+            return previousConsumer().andThen(
+                    visitorBuilder -> visitorBuilder.register(type(), function));
         }
     }
 }
