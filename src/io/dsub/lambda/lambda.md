@@ -137,3 +137,205 @@ Sometimes in applications, we need to create objects in a controlled way, so we
 delegate the creation of the objects to a special kind of objects; precisely the factory objects.
 
 This can be modeled by a supplier.
+```java
+/**
+ * As Supplier interface comes from JDK, we cannot directly modify it.
+ * Instead, we extend it then add desired functionality into it.
+ */
+@FunctionalInterface
+public interface Factory<T> extends Supplier<T> {
+    
+    // this makes a factory for no-args constructor to supply an object
+    static <T> Factory<T> createFactory(Supplier<T> supplier) {
+        T singleton = supplier.get();
+        return () -> singleton;
+    }
+    
+    // we can freely add a constructor with parameter as a Function, then supply a 
+    // value to be inserted.
+    static <T, R> Factory<T> createFactory(Function<R, T> constructor, R r) {
+        return () -> constructor.apply(r);
+    }
+
+    default T newInstance() {
+        return get();
+    }
+
+    default List<T> create5Circles() {
+        return IntStream.range(0, 5)
+                .mapToObj(index -> newInstance())
+                .collect(Collectors.toList());
+    }
+}
+```
+
+### Registry
+
+Registry is basically same as factory method as it creates and delivers an object.
+However, the key difference is that it uses a key value to determine which one to make.
+
+It is easy to understand and implement, however you need to know the valid key values at compile time.
+Or, you may even utilize an enum to resolve such issue.
+Even further, you can make it dynamic.
+
+Adding elements dynamically to a registry. This can be achieved with a Builder Pattern.
+1. add elements to the registry
+2. build the registry and seal it
+
+Designing an APi to create Registry need considerations close to following scenario.
+
+```java
+// create a builder object
+Stream.Builder<String> builder = Stream.builder();
+
+// add elements to the builder
+builder.add("one");
+builder.add("two");
+builder.add("three");
+
+// build the stream. now we cannot add any method as its sealed.
+Stream<String> stream = builder.build();
+stream.forEach(System.out::println);
+```
+
+There are several problems in above example.
+1. The builder is still available even after the build phase.
+2. The builder has to know the factory (the object that is going to be created)
+
+When you call the builder.build method, it returns a stream so the builder has to know the stream.
+This is really weird in this pattern.
+The builder is the object used to configure another object, but in fact, it has to know the subject once it is created;
+which is really not logical.
+
+The following code is will resolve the issue.
+```java
+import java.util.function.Supplier;
+
+public class Builder<T> {
+    public void add(String label, Supplier<T> supplier) {
+        // the builder can be made independent of the factory
+    }
+}
+```
+
+The registry below will be created using a factory method, which is static.
+The factory method will have to take the builder as a parameter in one way or another.
+This is a pattern to state the relationship between the builder and the registry.
+
+1. Builder
+```java
+@FunctionalInterface
+public interface Builder<T> {
+    void register(String label, Factory<T> factory);
+}
+```
+
+2. Registry
+```java
+@FunctionalInterface
+public interface Registry<T> {
+    Factory<? extends T> buildShapeFactory(String shape);
+
+    static <T> Registry<T> createRegistry(
+            Consumer<Builder<T>> consumer, Function<String, Factory<T>> errFunc) {
+
+        Map<String, Factory<T>> map = new HashMap<>();
+        Builder<T> builder = map::put;
+        consumer.accept(builder);
+
+        return shape -> map.computeIfAbsent(shape, errFunc);
+    }
+}
+```
+3. Example Code
+```java
+public class PlayWithRegistryBuilder {
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) {
+        
+        // registration - registers a builder with key and constructor
+        Consumer<Builder<Shape>> consumer1 =
+                builder -> builder.register("rectangle", Rectangle::new);
+        Consumer<Builder<Shape>> consumer2 =
+                builder -> builder.register("triangle", Triangle::new);
+        Consumer<Builder<Shape>> consumer3 =
+                builder -> builder.register("square", Square::new);
+        
+        // combine the consumers as initializer
+        Consumer<Builder<Shape>> initializer = consumer1.andThen(consumer2).andThen(consumer3);
+
+        // create registry with the initializer and error handling function
+        Registry<Shape> registry = Registry.createRegistry(initializer, s -> {
+            throw new IllegalArgumentException("Unknown shape " + s);
+        });
+
+        // get factory from the registry then test each by creating new instances.
+        Factory<Rectangle> buildRectangleFactory = (Factory<Rectangle>) registry.buildShapeFactory("rectangle");
+        Rectangle rectangle = buildRectangleFactory.newInstance();
+
+        Factory<Triangle> buildTriangleFactory = (Factory<Triangle>) registry.buildShapeFactory("triangle");
+        Triangle triangle = buildTriangleFactory.newInstance();
+
+        Factory<Square> buildSquareFactory = (Factory<Square>) registry.buildShapeFactory("square");
+        Square square = buildSquareFactory.newInstance();
+
+        System.out.println("Rectangle = " + rectangle);
+        System.out.println("Triangle = " + triangle);
+        System.out.println("Square = " + square);
+    }
+}
+```
+
+### Visitor
+#### What is visitor pattern?
+Visitors represent an operation to be performed on the element of an object structure.
+Visitors let us define a new operation without changing the classes of the elements on which it operates.
+
+The important point to note here is that we don't have to change the code of the class for the visitor to operate.  
+However, the class must be prepared to accept the visitor to operate.
+
+All these classes needs to do is to expose an accept (Visitor) method.
+
+#### How it works?
+
+##### From the model object part...
+1. The classes need to be prepared to accept visitors (like accept method)
+2. Accept the visitor from where it is needed
+```java
+public class Car {
+    Engine engine = ...;
+    Body body = ...;
+    Wheel wheel1 = ...;
+    
+    void accept(Visitor visitor) {
+        engine.accept(visitor);
+        body.accept(visitor);
+        wheel1.accept(visitor);
+        
+        visitor.visit(this);
+    }
+}
+```
+##### From the visitor part...
+1. The visitor must declare the parts it is to visit.
+2. The visitor object is also itself a callback (like double callbacks from above code example)
+```java
+public interface Visitor {
+    
+    void visit(Car car);
+    void visit(Wheel wheel);
+    void visit(Engine engine);
+    void visit(Body body);
+    
+}
+```
+
+From above examples, we can easily find out that if we need to add a bumper element into our car and let it allow a visitor to visit, we need to change the codes from 2 places at least (Visitor interface and within Bumper class, and Car class)
+
+What if we know that the visitor should visit extra parts of our class, but is not yet determined?
+
+#### Solution
+With lambdas, you can define operations on classes without adding them to the class. Since lambda expressions are functions, and they can be stored in variables, we can put them as a parameter. This makes them possible to be handled by a registry, such that registry holding the operation will be able to determine the operation for the given class.
+
+So... to make things simple, the example will show the dynamic visitor to visit classes without accept() method.
+
