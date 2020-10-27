@@ -136,31 +136,41 @@ In a nutshell, a factory pattern is an object able to create another objects.
 Sometimes in applications, we need to create objects in a controlled way, so we
 delegate the creation of the objects to a special kind of objects; precisely the factory objects.
 
-This can be modeled by a supplier.
+This can be modeled by a supplier, and it also supports the extra functionality to be naturally added into the interface which inherits the super class.
 ```java
 /**
  * As Supplier interface comes from JDK, we cannot directly modify it.
  * Instead, we extend it then add desired functionality into it.
+ * 
+ * It is important to note that we are instantiating the Factory<T> by static methods, 
+ * naturally separates the construction and behavial access.
  */
 @FunctionalInterface
 public interface Factory<T> extends Supplier<T> {
     
     // this makes a factory for no-args constructor to supply an object
+    // think of it as using nature of supplier as it has no parameter to accept
     static <T> Factory<T> createFactory(Supplier<T> supplier) {
+        // now, by using the supplier, we can get a T instance
         T singleton = supplier.get();
+        // returns the Supplier<T> as a Factory<T>
         return () -> singleton;
     }
     
     // we can freely add a constructor with parameter as a Function, then supply a 
     // value to be inserted.
     static <T, R> Factory<T> createFactory(Function<R, T> constructor, R r) {
+        // constructor: a constructor takes type R and returns an instance of type T
+        // r: the parameter type of R that being consumed by the constructor
+        // by using function as a constructor, consumes (R r)
         return () -> constructor.apply(r);
     }
 
+    // creates new instance
     default T newInstance() {
         return get();
     }
-
+    
     default List<T> create5Circles() {
         return IntStream.range(0, 5)
                 .mapToObj(index -> newInstance())
@@ -207,13 +217,15 @@ This is really weird in this pattern.
 The builder is the object used to configure another object, but in fact, it has to know the subject once it is created;
 which is really not logical.
 
-The following code is will resolve the issue.
+The following code is will resolve the issue, as supplier prevents from taking extra parameters.
+
 ```java
 import java.util.function.Supplier;
 
 public class Builder<T> {
     public void add(String label, Supplier<T> supplier) {
         // the builder can be made independent of the factory
+        // important: think of supplier as a factory
     }
 }
 ```
@@ -222,20 +234,22 @@ The registry below will be created using a factory method, which is static.
 The factory method will have to take the builder as a parameter in one way or another.
 This is a pattern to state the relationship between the builder and the registry.
 
-1. Builder
+##### Builder
 ```java
 @FunctionalInterface
 public interface Builder<T> {
+    // builder receives Factory<T> as a parameter, and its label by type String
     void register(String label, Factory<T> factory);
 }
 ```
 
-2. Registry
+##### Registry
 ```java
 @FunctionalInterface
 public interface Registry<T> {
-    Factory<? extends T> buildShapeFactory(String shape);
+    Factory<? extends T> buildFactory(String label);
 
+    // class method that generates a Registry<T> instance.
     static <T> Registry<T> createRegistry(
             Consumer<Builder<T>> consumer, Function<String, Factory<T>> errFunc) {
 
@@ -247,7 +261,7 @@ public interface Registry<T> {
     }
 }
 ```
-3. Example Code
+##### Example Code
 ```java
 public class PlayWithRegistryBuilder {
     @SuppressWarnings("unchecked")
@@ -265,18 +279,18 @@ public class PlayWithRegistryBuilder {
         Consumer<Builder<Shape>> initializer = consumer1.andThen(consumer2).andThen(consumer3);
 
         // create registry with the initializer and error handling function
-        Registry<Shape> registry = Registry.createRegistry(initializer, s -> {
+        Registry<Shape> shapeRegistry = Registry.createRegistry(initializer, s -> {
             throw new IllegalArgumentException("Unknown shape " + s);
         });
 
         // get factory from the registry then test each by creating new instances.
-        Factory<Rectangle> buildRectangleFactory = (Factory<Rectangle>) registry.buildShapeFactory("rectangle");
+        Factory<Rectangle> buildRectangleFactory = (Factory<Rectangle>) shapeRegistry.buildFactory("rectangle");
         Rectangle rectangle = buildRectangleFactory.newInstance();
 
-        Factory<Triangle> buildTriangleFactory = (Factory<Triangle>) registry.buildShapeFactory("triangle");
+        Factory<Triangle> buildTriangleFactory = (Factory<Triangle>) shapeRegistry.buildFactory("triangle");
         Triangle triangle = buildTriangleFactory.newInstance();
 
-        Factory<Square> buildSquareFactory = (Factory<Square>) registry.buildShapeFactory("square");
+        Factory<Square> buildSquareFactory = (Factory<Square>) shapeRegistry.buildFactory("square");
         Square square = buildSquareFactory.newInstance();
 
         System.out.println("Rectangle = " + rectangle);
@@ -291,8 +305,7 @@ public class PlayWithRegistryBuilder {
 Visitors represent an operation to be performed on the element of an object structure.
 Visitors let us define a new operation without changing the classes of the elements on which it operates.
 
-The important point to note here is that we don't have to change the code of the class for the visitor to operate.  
-However, the class must be prepared to accept the visitor to operate.
+The important point to note here is that **__we don't have to change the code of the class__** for the visitor to operate. However, the class must be prepared to accept the visitor to operate.
 
 All these classes needs to do is to expose an accept (Visitor) method.
 

@@ -52,6 +52,7 @@ public interface Visitor<R> {
 
 
     interface Y<R> extends Consumer<VisitorBuilder<R>> {
+
         default <T> Z<T, R> forType(Class<T> type) {
             return index -> index == 0 ? this : type;
         }
