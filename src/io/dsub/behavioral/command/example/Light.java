@@ -1,9 +1,13 @@
-package io.dsub.command.example;
+package io.dsub.behavioral.command.example;
 
 // receiver
 public class Light {
 
     private boolean isOn = false;
+
+    public boolean isOn() {
+        return this.isOn;
+    }
 
     public void toggle() {
         if (isOn) {

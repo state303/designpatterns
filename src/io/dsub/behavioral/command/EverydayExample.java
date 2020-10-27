@@ -1,4 +1,4 @@
-package io.dsub.command;
+package io.dsub.behavioral.command;
 
 public class EverydayExample {
     public static void main(String[] args) {

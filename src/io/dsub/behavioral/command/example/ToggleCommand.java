@@ -1,4 +1,4 @@
-package io.dsub.command.example;
+package io.dsub.behavioral.command.example;
 
 // concrete command
 public class ToggleCommand implements Command {

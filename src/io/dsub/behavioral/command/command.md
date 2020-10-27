@@ -1,5 +1,11 @@
 # Command
 
+### Summary
+- Encapsulates each request as an object
+- Decouple sender from processor
+- Very few drawbacks
+- Often used for undo functionality
+
 ### Concepts
 - Encapsulates request as an Object
 - Object-oriented callback
@@ -39,3 +45,16 @@ ConcreteCommand --> Receiver
 
 @enduml
 ```
+
+### Pitfalls
+- Dependence on other patterns
+- Multiple Commands
+- Make use of Memento
+- Prototype for copies
+
+### Contrast
+| Command                   | Strategy                 |
+|:--------------------------|:-------------------------|
+| Object per command        | Object per strategy      |
+| Class contains the 'what' | Class contains the 'how' |
+| Encapsulates action       | Encapsulates algorithm   |
