@@ -1,2 +1,23 @@
-package io.dsub.behavioral.interpreter.example;public class TerminalExpression {
+package io.dsub.behavioral.interpreter.example;
+
+import java.util.StringTokenizer;
+
+public class TerminalExpression implements Expression {
+
+    private String data;
+
+    public TerminalExpression(String data) {
+        this.data = data;
+    }
+    @Override
+    public boolean interpret(String context) {
+        StringTokenizer st = new StringTokenizer(context);
+        while (st.hasMoreTokens()) {
+            String t = st.nextToken();
+            if (t.equals(data)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

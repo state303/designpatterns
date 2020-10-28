@@ -1,5 +1,10 @@
 # Interpreter
 
+### Summary
+- Great for define a grammar
+- Rules or Validation
+- Special case pattern (where not many changes expected)
+
 ### Concepts
 - Represents grammar
 - Interpret a sentence
@@ -8,6 +13,7 @@
 - Examples:
   - java.util.Pattern
   - java.text.Format
+
 
 ### Design
 - AbstractExpression
@@ -34,3 +40,16 @@ NonTerminalExpression -up-|> AbstractExpression
 NonTerminalExpression o--> AbstractExpression
 ```
 
+### Pitfalls
+- Complexity
+- Class per rule
+- Use of other patterns
+- Adding new variant
+- Specific case
+
+### Contrast
+| Interpreter                                    | Visitor                                            |
+|:-----------------------------------------------|:---------------------------------------------------|
+| Access to properties                           | Needs observer functionality                       |
+| Function as methods                            | Functionality found in one place                   |
+| Adding new functionality changes every variant | Adding new variant requires changing every visitor |
