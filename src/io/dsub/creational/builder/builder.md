@@ -6,7 +6,6 @@
 - Few drawbacks
 
 ### Concepts
-
 - Handles complex constructors
 - Large number of parameters
 - Force Immutability
@@ -26,7 +25,6 @@ ConcreteBuilder : getResult()
 ```
 
 ### Design
-
 - Flexibility over telescoping constructors
 - Static inner class
 - Calls appropriate constructor
@@ -34,7 +32,6 @@ ConcreteBuilder : getResult()
 - Java 1.5+ can take advantage of Generics
 
 ### Pitfalls
-
 - Immutable
 - Inner static class
 - Designed first

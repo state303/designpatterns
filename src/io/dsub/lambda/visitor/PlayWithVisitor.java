@@ -24,6 +24,8 @@ public class PlayWithVisitor {
         System.out.println(visitedEngine);
         String visitedBody = visitor.visit(body);
         System.out.println(visitedBody);
+
+        String expect = visitor.visit(null);
 //        visitor.visit(body);
 
     }

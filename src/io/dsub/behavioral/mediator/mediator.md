@@ -23,6 +23,7 @@
 - Mediator, ConcreteMediator
 
 ```plantuml
+interface Mediator
 Colleague -left-> Mediator
 ConcreteMediator -up-|> Mediator
 ConcreteColleague2 <|-- ConcreteMediator

@@ -5,7 +5,6 @@
 - Simplifies Client Interface
 - Easy Pattern to implement
 - Refactoring Pattern
-- 
 
 ### Concepts
 

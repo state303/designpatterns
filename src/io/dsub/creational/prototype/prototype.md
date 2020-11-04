@@ -1,14 +1,12 @@
 # Prototype
 
 ### Summary
-
 - Guarantee unique instance
 - Often refactored in
 - Can help with performance issues
   - think about creating 100000000 instances
 
 ### Concept
-
 - Avoids costly creation
 - Avoids subclassing
 - Typically, doesn't use "new"
